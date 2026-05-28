@@ -191,7 +191,9 @@ Get your LangSmith API key at [smith.langchain.com](https://smith.langchain.com)
 ### 7. Install Guardrails Hub validators (Module C)
 
 ```bash
-pip install guardrails-ai presidio-analyzer presidio-anonymizer
+# guardrails-ai is quarantined on PyPI (CVE-2026-45758), install v0.10.0 from GitHub:
+pip install "guardrails-ai @ git+https://github.com/guardrails-ai/guardrails.git@v0.10.0"
+pip install presidio-analyzer presidio-anonymizer
 python -m spacy download en_core_web_lg
 ```
 
@@ -482,7 +484,8 @@ pip install deepeval
 
 **Guardrails Hub validators not found**
 ```bash
-pip install guardrails-ai
+# guardrails-ai is quarantined on PyPI (CVE-2026-45758), install v0.10.0 from GitHub:
+pip install "guardrails-ai @ git+https://github.com/guardrails-ai/guardrails.git@v0.10.0"
 guardrails configure  # paste your free token from https://hub.guardrailsai.com/keys
 guardrails hub install hub://guardrails/regex_match
 guardrails hub install hub://guardrails/toxic_language
