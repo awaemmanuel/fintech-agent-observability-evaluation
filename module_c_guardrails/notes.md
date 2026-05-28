@@ -357,8 +357,7 @@ Agent Response
 ### Setup
 
 ```bash
-# guardrails-ai is quarantined on PyPI (CVE-2026-45758), install v0.10.0 from GitHub:
-pip install "guardrails-ai @ git+https://github.com/guardrails-ai/guardrails.git@v0.10.0"
+pip install -r requirements.txt  # installs guardrails-ai from GitHub (PyPI is quarantined)
 guardrails hub install hub://guardrails/regex_match
 guardrails hub install hub://guardrails/toxic_language
 guardrails hub install hub://guardrails/competitor_check

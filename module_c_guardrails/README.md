@@ -88,11 +88,11 @@ Covers: guardrails vs prompt instructions, four strategies (regex → Moderation
 
 You need Guardrails AI and Presidio installed:
 
+Follow the setup instructions in the [main README](../README.md) to install all dependencies.
+
+Additionally, Presidio requires the spaCy NER model for detecting names, addresses, and other PII that regex can't match. This is a pre-trained ML model (~560MB) distributed separately from PyPI:
+
 ```bash
-# Install dependencies
-# guardrails-ai is quarantined on PyPI (CVE-2026-45758), install v0.10.0 from GitHub:
-pip install "guardrails-ai @ git+https://github.com/guardrails-ai/guardrails.git@v0.10.0"
-pip install presidio-analyzer presidio-anonymizer
 python -m spacy download en_core_web_lg
 ```
 

@@ -191,9 +191,7 @@ Get your LangSmith API key at [smith.langchain.com](https://smith.langchain.com)
 ### 7. Install Guardrails Hub validators (Module C)
 
 ```bash
-# guardrails-ai is quarantined on PyPI (CVE-2026-45758), install v0.10.0 from GitHub:
-pip install "guardrails-ai @ git+https://github.com/guardrails-ai/guardrails.git@v0.10.0"
-pip install presidio-analyzer presidio-anonymizer
+pip install -r requirements.txt
 python -m spacy download en_core_web_lg
 ```
 
@@ -367,9 +365,9 @@ The pinned versions in `requirements.txt` are tested to work together. If you se
 
 | Package | Constraint | Reason |
 |---|---|---|
-| `langsmith` | `<0.3,>=0.1.17` | `langchain==0.3.14` requires `langsmith<0.3` |
+| `langsmith` | `<0.3,>=0.1.17` | `langchain` 0.3.x requires `langsmith<0.3` |
 | `python-dotenv` | `>=1.1.1` | `deepeval>=3.8.9` requires `python-dotenv>=1.1.1` |
-| `guardrails-ai` | `>=0.6.0,<0.9.0` | Versions 0.9+ require `langchain-core>=1.0.0`, which conflicts with the langchain 0.3.x ecosystem (`langchain-core<0.4.0`) |
+| `guardrails-ai` | Installed from GitHub `@v0.6.0` | PyPI is quarantined (CVE-2026-45758). v0.6.0 is compatible with langchain 0.3.x (`langchain-core<0.4`). |
 
 > **Tip**: `langchain-core` and `langchain-text-splitters` should **not** be pinned directly — they are resolved automatically as transitive dependencies of `langchain` and `langchain-openai`.
 
@@ -484,8 +482,7 @@ pip install deepeval
 
 **Guardrails Hub validators not found**
 ```bash
-# guardrails-ai is quarantined on PyPI (CVE-2026-45758), install v0.10.0 from GitHub:
-pip install "guardrails-ai @ git+https://github.com/guardrails-ai/guardrails.git@v0.10.0"
+pip install -r requirements.txt  # installs guardrails-ai from GitHub (PyPI is quarantined)
 guardrails configure  # paste your free token from https://hub.guardrailsai.com/keys
 guardrails hub install hub://guardrails/regex_match
 guardrails hub install hub://guardrails/toxic_language
