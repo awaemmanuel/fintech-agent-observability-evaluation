@@ -1,0 +1,45 @@
+// SecureBank multi-agent support system — core architecture
+digraph architecture {
+  rankdir=TB;
+  bgcolor="white";
+  fontname="Helvetica";
+  labelloc="t";
+  label=<<b>SecureBank Multi-Agent Support System</b><br/><font point-size="11" color="#666666">LangGraph state machine · every query = supervisor + 1 specialist (≥2 LLM calls)</font>>;
+  fontsize=18;
+
+  node [fontname="Helvetica", shape=box, style="rounded,filled", fontsize=12, margin="0.18,0.12"];
+  edge [fontname="Helvetica", fontsize=10, color="#555555"];
+
+  query   [label="Customer Query", shape=oval, fillcolor="#1d3557", fontcolor="white", style="filled"];
+  answer  [label="Answer to Customer", shape=oval, fillcolor="#1d3557", fontcolor="white", style="filled"];
+
+  supervisor [label=<<b>SUPERVISOR</b><br/><font point-size="10">classify_intent · 1 LLM call<br/>policy / account_status / escalation</font>>, fillcolor="#e63946", fontcolor="white"];
+
+  // specialists
+  policy     [label=<<b>POLICY AGENT</b><br/><font point-size="10">RAG over policy docs<br/>most expensive path</font>>, fillcolor="#457b9d", fontcolor="white"];
+  account    [label=<<b>ACCOUNT AGENT</b><br/><font point-size="10">regex extract ACC-XXXXX<br/>mock DB lookup, LLM formats</font>>, fillcolor="#2a9d8f", fontcolor="white"];
+  escalation [label=<<b>ESCALATION AGENT</b><br/><font point-size="10">empathy + handoff<br/>no retrieval, no data</font>>, fillcolor="#e9a13b", fontcolor="white"];
+
+  // data sources
+  chroma  [label=<Chroma vector store<br/><font point-size="9">4 policy .md docs, chunked + embedded</font>>, shape=cylinder, fillcolor="#a8dadc", fontcolor="#1d3557"];
+  mockdb  [label=<MOCK_ACCOUNTS dict<br/><font point-size="9">ACC-12345 · ACC-67890 · ACC-11111 (frozen)</font>>, shape=cylinder, fillcolor="#a8dadc", fontcolor="#1d3557"];
+
+  query -> supervisor;
+  supervisor -> policy     [label="  policy"];
+  supervisor -> account    [label="  account_status"];
+  supervisor -> escalation [label="  escalation"];
+
+  policy  -> chroma [dir=both, style=dashed, label="similarity\nsearch (top_k)"];
+  account -> mockdb [dir=both, style=dashed, label="lookup by id"];
+
+  policy     -> answer;
+  account    -> answer;
+  escalation -> answer;
+
+  // SSN landmine annotation
+  ssn [label=<<b>⚠ planted vulnerability</b><br/><font point-size="9">account agent passes SSN last-4<br/>into the LLM prompt (line 376).<br/>Module C catches this.</font>>, shape=note, fillcolor="#fff3cd", fontcolor="#664d03"];
+  account -> ssn [style=dotted, arrowhead=none, color="#b8860b"];
+
+  { rank=same; policy; account; escalation; }
+  { rank=same; chroma; mockdb; }
+}

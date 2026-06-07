@@ -48,6 +48,12 @@ os.environ.setdefault("LANGCHAIN_TRACING_V2", "true")
 # chromadb's posthog telemetry client is incompatible with posthog>=3 — silence it
 logging.getLogger("chromadb.telemetry.product.posthog").setLevel(logging.CRITICAL)
 
+# Guardrails emits a noisy UserWarning when no asyncio event loop is running; it simply
+# falls back to synchronous validation (the correct behavior for this script). Silence it
+# so it doesn't interleave into the demo output mid-line.
+import warnings
+warnings.filterwarnings("ignore", message="Could not obtain an event loop")
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "project"))
 from fintech_support_agent import build_support_agent, ask
 

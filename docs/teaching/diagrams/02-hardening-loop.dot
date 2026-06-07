@@ -1,0 +1,24 @@
+// The 4-module production-hardening loop
+digraph hardening_loop {
+  rankdir=LR;
+  bgcolor="white";
+  fontname="Helvetica";
+  labelloc="t";
+  label=<<b>Production Hardening Loop</b><br/><font point-size="11" color="#666666">You can't evaluate or secure what you can't see — observability comes first</font>>;
+  fontsize=18;
+
+  node [fontname="Helvetica", shape=box, style="rounded,filled", fontsize=12, fontcolor="white", margin="0.22,0.16"];
+  edge [fontname="Helvetica", fontsize=10, color="#555555", penwidth=1.4];
+
+  deploy [label=<<b>DEPLOY</b>>, fillcolor="#6c757d"];
+  a [label=<<b>OBSERVE</b><br/><font point-size="10">Module A — see it<br/>LangSmith traces</font>>, fillcolor="#e63946"];
+  b [label=<<b>EVALUATE</b><br/><font point-size="10">Module B — measure it<br/>datasets · MRR · DeepEval · G-Eval</font>>, fillcolor="#457b9d"];
+  c [label=<<b>GUARD</b><br/><font point-size="10">Module C — secure it<br/>input + output, 4 strategies</font>>, fillcolor="#2a9d8f"];
+  d [label=<<b>OPTIMIZE</b><br/><font point-size="10">Module D — afford it<br/>tiktoken · before/after</font>>, fillcolor="#e9a13b"];
+
+  deploy -> a -> b -> c -> d;
+  d -> deploy [label="  ship", constraint=false, color="#999999"];
+
+  // the closing feedback edge: failing traces become eval data
+  a -> b [style=dashed, color="#e63946", constraint=false, label=<<font point-size="9" color="#e63946">curate failing traces<br/>into the dataset</font>>, dir=back];
+}

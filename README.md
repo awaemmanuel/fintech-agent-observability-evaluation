@@ -161,10 +161,46 @@ source .venv/bin/activate
 
 ### 5. Install dependencies
 
+You have two options. **Option A is recommended for first-time setup** (cross-platform).
+
+#### Option A — `requirements.txt` + dependency fix (all platforms)
+
 ```bash
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
+
+> ⚠️ **Required follow-up step.** `guardrails-ai` pulls in `langchain-core` 1.x, which
+> is incompatible with the `langchain` 0.3.x line the agent is built on. Left as-is you
+> will hit `ImportError: cannot import name 'PipelinePromptTemplate'` the first time you
+> run any module. Run the fix script to pin `langchain-core`/`langsmith` back to the
+> 0.3.x line (do this **with your venv activated**):
+
+**macOS / Linux:**
+```bash
+bash scripts/fix-deps.sh
+```
+**Windows (PowerShell):**
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\fix-deps.ps1
+```
+
+A cosmetic `guardrails-ai requires langchain-core>=1.0` pip warning afterward is expected
+and harmless — Module C still imports and runs fine on the 0.3.x line.
+
+#### Option B — `requirements.lock` (exact, reproducible; macOS / Linux)
+
+For an identical, known-good environment in one step (no fix script needed):
+
+```bash
+python -m pip install --upgrade pip
+pip install --no-deps -r requirements.lock
+```
+
+> The `--no-deps` flag is **required** — it installs the exact pinned versions without
+> re-running pip's resolver, which would otherwise abort on the `guardrails-ai` vs
+> `langchain-core` version conflict. All transitive dependencies are already pinned in
+> the lock file.
 
 ### 6. Configure API keys
 
@@ -210,6 +246,23 @@ guardrails hub install hub://guardrails/competitor_check
 ```
 
 > **Note**: Presidio requires the spaCy `en_core_web_lg` model for NER-based PII detection. The `spacy download` command above installs it (~560 MB).
+
+> ⚠️ **Order matters — re-pin after this step.** Each `guardrails hub install` re-upgrades
+> `langchain-core` back to 1.x (guardrails' dependency), which re-breaks the agent. So
+> **after** installing the validators, re-run the dependency fix one last time:
+> ```bash
+> bash scripts/fix-deps.sh        # macOS / Linux
+> # powershell -ExecutionPolicy Bypass -File scripts\fix-deps.ps1   # Windows
+> ```
+> Rule of thumb: **`fix-deps` is always the last setup step**, after every pip/guardrails install.
+
+> **ToxicLanguage note:** its post-install downloads a local `detoxify` model that needs
+> `torch >= 2.4`. If that step errors, it's harmless **when remote inferencing is enabled**
+> (which you chose during `guardrails configure`) — the validator runs via the Guardrails
+> API instead. If `from guardrails.hub import ToxicLanguage` later fails with "no attribute",
+> the validator package is installed but unregistered; add it to `.guardrails/hub_registry.json`
+> alongside the other two validators (same JSON shape, `import_path: guardrails_grhub_toxic_language`,
+> `exports: ["ToxicLanguage"]`).
 
 ### 8. Run a smoke test
 
@@ -271,6 +324,40 @@ python module_a_observability/demo.py
                 ├── ChatOpenAI → empathetic response
                 └── No context retrieval — just empathy + contact info
 ```
+
+### Vector Store & RAG Setup (Policy Agent)
+
+Only the **Policy Agent** uses retrieval. The vector store is built inside
+`build_support_agent()` ([`project/fintech_support_agent.py`](project/fintech_support_agent.py)) in three steps:
+
+1. **Load** — the 4 markdown files in `project/documents/` are each read into a LangChain
+   `Document` with `metadata={"source": "<filename>"}`, so retrieved chunks trace back to
+   their policy file.
+2. **Chunk** — `RecursiveCharacterTextSplitter(chunk_size, chunk_overlap)` splits them,
+   preferring paragraph boundaries (`\n\n` → `\n` → `" "` → `""`). Defaults: `chunk_size=1000`,
+   `chunk_overlap=100`. Overlap keeps facts that straddle a boundary intact.
+3. **Embed + store** — `OpenAIEmbeddings("text-embedding-3-small")` (1536-dim) vectorizes each
+   chunk; `Chroma.from_documents(...)` stores them in an **in-memory** collection backed by
+   the `chroma-hnswlib` HNSW index.
+
+Retrieval is `vectorstore.as_retriever(search_kwargs={"k": top_k})` (default `top_k=3`) — a
+top-k similarity search. Module B's optional reranker over-fetches with
+`vectorstore.similarity_search(query, k=fetch_k)` then re-scores with an LLM.
+
+| Property | Value |
+|---|---|
+| Persistence | **None** — in-memory only. No `persist_directory`. |
+| Lifecycle | Rebuilt **and re-embedded** on every `build_support_agent()` call. |
+| `collection_name` | Per-call name, so building several agents in one process (Module B A/B) doesn't collide. |
+| Embedding model | `text-embedding-3-small` (1536 dims) — a separate OpenAI cost line from the chat model. |
+| Similarity | Chroma's default (L2 / squared-Euclidean over the vectors); not overridden. |
+| Index | `chroma-hnswlib` (the C++ package that needs a compiler at install — see Troubleshooting). |
+| Tunables | `chunk_size`, `chunk_overlap`, `top_k` — the RAG levers tuned in Modules B (quality/MRR) and D (cost). |
+
+Because the store is in-memory and rebuilt each run, there's no stale index and no DB to
+manage — at the cost of re-embedding the docs (a few seconds + a tiny embedding charge) every
+time the agent is constructed. In production you'd persist the index and re-embed only when
+documents change.
 
 ### Full Production Pipeline (After All Modules)
 
@@ -451,11 +538,47 @@ sudo apt-get update && sudo apt-get install -y build-essential
 sudo dnf groupinstall "Development Tools"
 ```
 
+#### `pyenv install 3.12.x` fails to build on macOS
+
+Two failure modes seen on recent macOS:
+
+- **`ginstall: cannot stat '..._curses...'` / very old `python-build`** — your pyenv build
+  tool is stale. Update it: `cd ~/.pyenv && git pull` (or `brew upgrade pyenv`), then retry.
+- **`ld: symbol(s) not found ... _libintl_textdomain` (gettext)** or a **MacPorts `_curses`
+  conflict** — a Homebrew/MacPorts mix is leaking libs into the build. Strip MacPorts from
+  PATH for the build, e.g.:
+  ```bash
+  PATH="$(echo "$PATH" | tr ':' '\n' | grep -v '/opt/local' | paste -sd ':' -)" pyenv install 3.12.13
+  ```
+
+You don't have to use pyenv at all — any working Python 3.12 is fine. Simpler alternatives:
+the [python.org universal2 installer](https://www.python.org/downloads/), Homebrew
+(`brew install python@3.12`), or `uv python install 3.12`. Then create the venv with that
+interpreter.
+
+#### NumPy 2.x crashes (`_ARRAY_API not found`, torch/spaCy warnings)
+
+`torch` and `spaCy` here are compiled against NumPy 1.x. If NumPy 2.x got pulled in, pin it down:
+```bash
+pip install "numpy<2"
+```
+(Already pinned in `requirements.lock`.)
+
 After installing the compiler, re-run `pip install -r requirements.txt`.
 
 ---
 
 ### Common Runtime Errors
+
+**`ImportError: cannot import name 'PipelinePromptTemplate' from 'langchain_core.prompts'`**
+
+`guardrails-ai` upgraded `langchain-core` to the 1.x line, breaking `langchain` 0.3.x.
+Run the dependency fix (with your venv activated):
+```bash
+bash scripts/fix-deps.sh            # macOS / Linux
+# powershell -ExecutionPolicy Bypass -File scripts\fix-deps.ps1   # Windows
+```
+Or reinstall from the lock file: `pip install --no-deps -r requirements.lock`.
 
 **`ModuleNotFoundError: No module named 'langchain'`**
 ```bash

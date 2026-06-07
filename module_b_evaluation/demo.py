@@ -217,7 +217,10 @@ results_b = evaluate(
     evaluators=[routing_evaluator, keyword_correctness],
     experiment_prefix="demo-v2-improved",
     num_repetitions=3,
-    metadata={"model": "gpt-4o-mini", "version": "improved-chunking", "chunk_size": 1500, "top_k": 1},
+    metadata={"model": "gpt-4o-mini",
+              "version": "improved-chunking",
+              "chunk_size": 1500,
+              "top_k": 1},
 )
 
 print("\n>>> Experiment B complete.")

@@ -1,0 +1,45 @@
+// Module C — the full guarded pipeline (input + output, cheapest first)
+digraph guarded_pipeline {
+  rankdir=TB;
+  bgcolor="white";
+  fontname="Helvetica";
+  labelloc="t";
+  label=<<b>Module C — The Full Guarded Pipeline</b><br/><font point-size="11" color="#666666">Prompts suggest; guardrails enforce · guard BOTH sides · cheapest strategy first</font>>;
+  fontsize=18;
+
+  node [fontname="Helvetica", shape=box, style="rounded,filled", fontsize=11, margin="0.18,0.1"];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+
+  query [label="Customer Query", shape=oval, fillcolor="#1d3557", fontcolor="white"];
+
+  subgraph cluster_in {
+    label=<<b>INPUT GUARDRAILS</b>  (before LLM — block/redact, save cost · fail-open)>;
+    fontname="Helvetica"; fontsize=12; style="rounded,filled"; fillcolor="#f7fbfc"; color="#a8dadc";
+    in1 [label=<<b>1 · Moderation API</b>  free, ~100ms<br/><font point-size="9">violence / self-harm / hate — by intent</font>>, fillcolor="#a8dadc", fontcolor="#1d3557"];
+    in2 [label=<<b>2 · Regex guard</b>  $0, ~1ms<br/><font point-size="9">SSN keyword · advice · competitors · "bomb"</font>>, fillcolor="#a8dadc", fontcolor="#1d3557"];
+    in3 [label=<<b>3 · LLM injection classifier</b>  ~$0.001<br/><font point-size="9">catches rephrased attacks regex misses</font>>, fillcolor="#a8dadc", fontcolor="#1d3557"];
+    in4 [label=<<b>4 · Presidio redact (input)</b>  local, ~10ms<br/><font point-size="9">"my SSN is 123-45-6789" → &lt;US_SSN&gt;</font>>, fillcolor="#a8dadc", fontcolor="#1d3557"];
+    in1 -> in2 -> in3 -> in4;
+  }
+
+  agent [label=<<b>MULTI-AGENT GRAPH</b><br/><font point-size="9">runs on the cleaned query — never sees raw PII</font>>, fillcolor="#457b9d", fontcolor="white"];
+
+  subgraph cluster_out {
+    label=<<b>OUTPUT GUARDRAILS</b>  (after LLM — validate before user sees it · fail-closed)>;
+    fontname="Helvetica"; fontsize=12; style="rounded,filled"; fillcolor="#f3f9f5"; color="#2a9d8f";
+    out1 [label=<<b>5 · Guardrails AI</b><br/><font point-size="9">RegexMatch (SSN) → ToxicLanguage → CompetitorCheck</font>>, fillcolor="#88c9b8", fontcolor="#1b4332"];
+    out2 [label=<<b>6 · Presidio redact (output)</b><br/><font point-size="9">names/emails/addresses regex can't catch: Alice → &lt;PERSON&gt;</font>>, fillcolor="#88c9b8", fontcolor="#1b4332"];
+    out1 -> out2;
+  }
+
+  fallback [label=<<b>Safe Fallback</b><br/><font point-size="9">any guard fires → same bland message<br/>never reveal WHY (helps attackers)</font>>, shape=note, fillcolor="#fff3cd", fontcolor="#664d03"];
+  response [label="Validated Response", shape=oval, fillcolor="#1d3557", fontcolor="white"];
+
+  query -> in1;
+  in4 -> agent [label="  cleaned query"];
+  agent -> out1;
+  out2 -> response;
+
+  in2 -> fallback [label="  blocked", style=dashed, color="#b8860b"];
+  out1 -> fallback [label="  blocked", style=dashed, color="#b8860b"];
+}

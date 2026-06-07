@@ -12,7 +12,6 @@ Architecture:
 """
 
 # ── Standard library imports ──
-import os
 import re       # Used to extract account IDs (e.g. ACC-12345) from user queries
 import json     # Used to serialize mock account data into LLM-readable context
 from pathlib import Path
@@ -101,6 +100,7 @@ MOCK_ACCOUNTS = {
 # Every node in the graph reads from and writes to this typed dictionary.
 # LangGraph merges each node's returned dict back into this state automatically.
 class SupportState(TypedDict):
+    """ The shared state for the support agent. """
     query: str                    # The original customer question
     intent: str                   # Classified intent: "policy" | "account_status" | "escalation"
     response: str                 # Final answer returned to the customer
@@ -453,7 +453,7 @@ def build_support_agent(
         "format_docs": format_docs,  # Doc formatter (used in evaluation)
         "llm": llm,              # ChatOpenAI instance (shared across agents)
         "rag_chain": rag_chain,  # Standalone RAG chain (retriever → LLM)
-        "vectorstore": vectorstore,  # Raw Chroma store (for similarity_search_with_relevance_scores)
+        "vectorstore": vectorstore, # Raw Chroma store (for similarity_search_with_relevance_scores)
     }
 
 

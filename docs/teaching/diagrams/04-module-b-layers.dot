@@ -1,0 +1,26 @@
+// Module B — five evaluation layers, each with its own metric
+digraph eval_layers {
+  rankdir=TB;
+  bgcolor="white";
+  fontname="Helvetica";
+  labelloc="t";
+  label=<<b>Module B — Five Layers, Five Metrics</b><br/><font point-size="11" color="#666666">One "is it good?" score hides which layer broke · fix routing first — failures cascade</font>>;
+  fontsize=18;
+
+  node [fontname="Helvetica", shape=box, style="rounded,filled", fontsize=11, margin="0.2,0.12"];
+  edge [fontname="Helvetica", fontsize=10, color="#555555", penwidth=1.3];
+
+  l1 [label=<<b>1 · ROUTING</b>   right agent?<br/><font point-size="9">metric: routing_accuracy (exact match) — most critical</font>>, fillcolor="#e63946", fontcolor="white"];
+  l2 [label=<<b>2 · RETRIEVAL</b>   right documents?<br/><font point-size="9">metric: did it fetch account_fees.md?</font>>, fillcolor="#d36b75", fontcolor="white"];
+  l3 [label=<<b>3 · RANKING</b>   right doc ranked high?<br/><font point-size="9">metric: MRR (Mean Reciprocal Rank)</font>>, fillcolor="#457b9d", fontcolor="white"];
+  l4 [label=<<b>4 · FAITHFULNESS</b>   grounded, not hallucinated?<br/><font point-size="9">metric: LLM-as-judge — faithful to CONTEXT</font>>, fillcolor="#2a9d8f", fontcolor="white"];
+  l5 [label=<<b>5 · CORRECTNESS</b>   matches the truth?<br/><font point-size="9">metric: LLM-as-judge — vs ground truth</font>>, fillcolor="#e9a13b", fontcolor="white"];
+
+  l1 -> l2 -> l3 -> l4 -> l5 [label="  cascades ↓"];
+
+  trap [label=<<b>The trap: faithfulness ≠ correctness</b><br align="left"/><font point-size="9">Retriever returns the WRONG doc, LLM summarizes it<br align="left"/>accurately → faithfulness 1.0, correctness 0.0.<br align="left"/>You need BOTH.</font>>, shape=note, fillcolor="#fff3cd", fontcolor="#664d03"];
+  l4 -> trap [style=dotted, arrowhead=none, color="#b8860b"];
+
+  tooling [label=<<b>Tooling</b><br align="left"/><font point-size="9">LangSmith: traces · UI · A/B experiments<br align="left"/>DeepEval: pytest-native metrics → CI gate<br align="left"/>G-Eval: plain-English rubric (e.g. empathy)<br align="left"/>num_repetitions=3: temp=0 ≠ deterministic</font>>, shape=note, fillcolor="#e8f4ea", fontcolor="#1b4332"];
+  l5 -> tooling [style=dotted, arrowhead=none, color="#2a9d8f"];
+}

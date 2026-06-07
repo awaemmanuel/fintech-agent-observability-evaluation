@@ -1,0 +1,28 @@
+// Module D — per-query cost structure by path
+digraph cost_structure {
+  rankdir=LR;
+  bgcolor="white";
+  fontname="Helvetica";
+  labelloc="t";
+  label=<<b>Module D — Where the Tokens Go</b><br/><font point-size="11" color="#666666">Every query = supervisor + specialist · retrieved context is the expensive part · output costs 4–5× input</font>>;
+  fontsize=18;
+
+  node [fontname="Helvetica", shape=box, style="rounded,filled", fontsize=11, margin="0.18,0.12"];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+
+  sup [label=<<b>SUPERVISOR</b><br/><font point-size="9">~100 in / ~3 out<br/>cheap, runs on EVERY query</font>>, fillcolor="#e63946", fontcolor="white"];
+
+  policy  [label=<<b>POLICY (RAG)</b><br/><font point-size="9">~730–1,330 in / ~50–150 out<br/>retrieved context = the big lever<br/>≈ $0.0003</font>>, fillcolor="#457b9d", fontcolor="white"];
+  account [label=<<b>ACCOUNT</b><br/><font point-size="9">~300 in / ~70 out<br/>account JSON<br/>≈ $0.0001</font>>, fillcolor="#2a9d8f", fontcolor="white"];
+  escal   [label=<<b>ESCALATION</b><br/><font point-size="9">~120 in / ~100 out<br/>no context — cheapest<br/>≈ $0.0001</font>>, fillcolor="#e9a13b", fontcolor="white"];
+
+  sup -> policy  [label="  policy"];
+  sup -> account [label="  account"];
+  sup -> escal   [label="  escalation"];
+
+  levers [label=<<b>Optimize (then VERIFY quality with Module B)</b><br align="left"/><font point-size="9">• reduce top_k (5→3) — biggest, simplest lever<br align="left"/>• reduce chunk_size<br align="left"/>• prompt caching (identical system prompt → ~10% price)<br align="left"/>• semantic caching · model routing · Batch API (50% off, offline)<br align="left"/><br align="left"/><b>Before/After: chunk 1000,k5 → 400,k3 ≈ 30–40% fewer prompt tokens</b><br align="left"/>Cost savings with quality regression = false savings</font>>, shape=note, fillcolor="#fff3cd", fontcolor="#664d03"];
+
+  policy -> levers [style=dotted, arrowhead=none, color="#b8860b"];
+
+  { rank=same; policy; account; escal; }
+}

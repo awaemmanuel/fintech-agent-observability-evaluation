@@ -35,6 +35,11 @@ load_dotenv()
 
 os.environ.setdefault("LANGCHAIN_TRACING_V2", "true")
 
+# Guardrails emits a noisy UserWarning when no asyncio event loop is running; it falls back
+# to synchronous validation (correct here). Silence it so it doesn't clutter the output.
+import warnings
+warnings.filterwarnings("ignore", message="Could not obtain an event loop")
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "project"))
 from fintech_support_agent import build_support_agent, ask
 

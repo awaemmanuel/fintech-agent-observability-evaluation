@@ -1,0 +1,34 @@
+// Module A — anatomy of a trace + the failure points it reveals
+digraph trace_tree {
+  rankdir=TB;
+  bgcolor="white";
+  fontname="Helvetica";
+  labelloc="t";
+  label=<<b>Module A — A Trace Is the New Stack Trace</b><br/><font point-size="11" color="#666666">Policy query trace tree · each node is an inspectable run with I/O, tokens, latency</font>>;
+  fontsize=18;
+
+  node [fontname="Helvetica", shape=box, style="rounded,filled", fontsize=11, margin="0.16,0.1"];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+
+  trace [label=<<b>TRACE</b>  "What is the overdraft fee?"<br/><font point-size="9">total ~1,410ms · ~$0.0002</font>>, fillcolor="#1d3557", fontcolor="white"];
+
+  cls   [label=<[chain] classify_intent  <font point-size="9">333ms</font>>, fillcolor="#f1c0c5"];
+  clsl  [label=<[llm] ChatOpenAI → "policy"  <font point-size="9">87 prompt / 3 completion</font>>, fillcolor="#ffe5e8"];
+
+  pol   [label=<[chain] policy_agent  <font point-size="9">1,077ms</font>>, fillcolor="#bcd4e0"];
+  ret   [label=<[retriever] Chroma  <font point-size="9">180ms · 0 tokens<br/>→ account_fees.md chunks</font>>, fillcolor="#dbe9f1"];
+  fmt   [label=<[function] format_docs  <font point-size="9">2ms</font>>, fillcolor="#dbe9f1"];
+  poll  [label=<[llm] ChatOpenAI → "$35..."  <font point-size="9">1,240 prompt / 85 completion</font>>, fillcolor="#dbe9f1"];
+
+  trace -> cls;
+  trace -> pol;
+  cls -> clsl;
+  pol -> ret;
+  pol -> fmt;
+  pol -> poll;
+
+  // failure-point checklist box
+  fails [label=<<b>Where does it break?  Open the trace, point at one step:</b><br align="left"/><font point-size="10">① Supervisor misrouted?     → fix routing prompt<br align="left"/>② Retriever wrong docs?      → fix embeddings / chunk_size / k<br align="left"/>③ Right docs ranked too low? → increase k / rerank<br align="left"/>④ Right docs, wrong answer?  → hallucination → strengthen prompt<br align="left"/></font>>, shape=note, fillcolor="#fff3cd", fontcolor="#664d03"];
+
+  poll -> fails [style=dotted, arrowhead=none, color="#b8860b"];
+}

@@ -10,5 +10,7 @@ chroma_db/
 audit_log*.jsonl
 .claude/
 .deepeval/
+.guardrails/
+.python-version
 batch_input.jsonl
 .pdf_images/
