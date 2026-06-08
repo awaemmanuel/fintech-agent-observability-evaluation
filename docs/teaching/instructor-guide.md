@@ -364,6 +364,10 @@ trace the not-found path, then bonus-tag the runs.
 
 # MODULE B — Evaluation (1:20–2:50)
 
+> **Dataset reference:** [eval-dataset-walkthrough.md](eval-dataset-walkthrough.md) explains
+> `module_b_evaluation/eval_dataset.py` — the two datasets, the triplet format, the coverage
+> design, and the per-file naming. Good for answering "where do these examples come from?"
+
 ### Objective
 Students can build a labeled dataset, write evaluators for each layer, run an A/B
 experiment, read MRR, and use DeepEval/G-Eval — then run the hill-climbing loop:
@@ -648,6 +652,10 @@ relevancy, score empathy with G-Eval, then a second hill-climb changing **`top_k
 
 # MODULE C — Guardrails (3:00–3:50)
 
+> **Code reference:** [module-c-walkthrough.md](module-c-walkthrough.md) explains the guardrail
+> functions (the 4 strategies, the SSN negative-lookahead regex, the full pipeline + fail
+> policy). Good for the "how does each guard actually work?" questions.
+
 ### Objective
 Students can place input and output guardrails, pick the cheapest strategy that works,
 and build the layered pipeline. Core mental shift: **prompts suggest, guardrails enforce.**
@@ -833,6 +841,9 @@ as separate entities (entity match, not substring).
 ---
 
 # MODULE D — Cost Optimization (3:50–4:00 + wrap)
+
+> **Code reference:** [module-d-walkthrough.md](module-d-walkthrough.md) explains the measurement
+> code (tiktoken, `get_openai_callback` summing both calls, the `measure()` harness, before/after).
 
 ### Objective
 Students can count tokens with `tiktoken`, measure real cost with `get_openai_callback`,

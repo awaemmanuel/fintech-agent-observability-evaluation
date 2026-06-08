@@ -230,6 +230,10 @@ is exactly why you inspect them.
 
 # Module B — Evaluation
 
+> **Dataset deep dive:** [eval-dataset-walkthrough.md](eval-dataset-walkthrough.md) explains
+> `module_b_evaluation/eval_dataset.py` — the two datasets (general + hill-climb), the example
+> format, and why coverage is designed the way it is.
+
 **Goal:** measure quality across many cases, per layer, and prove a change helped — the
 hill-climbing loop.
 
@@ -339,6 +343,9 @@ hill-climb changing **`top_k` 1→5** and prove correctness improves.
 
 # Module C — Guardrails
 
+> **Code deep dive:** [module-c-walkthrough.md](module-c-walkthrough.md) — the four guardrail
+> strategies in code, the inverted SSN regex, and the full pipeline with fail-open/fail-closed.
+
 **Goal:** enforce the rules that must *never* be broken. **Prompts suggest; guardrails
 enforce.**
 
@@ -433,6 +440,9 @@ guarded pipeline.
 ---
 
 # Module D — Cost Optimization
+
+> **Code deep dive:** [module-d-walkthrough.md](module-d-walkthrough.md) — tiktoken,
+> `get_openai_callback`, the `measure()` harness, and the before/after method.
 
 **Goal:** measure cost, cut it with the biggest levers, and **verify quality didn't drop.**
 
